@@ -1,16 +1,25 @@
+#* Copyright 2023 The Board of Trustees of the University of Illinois. All Rights Reserved.
+#
+#* Licensed under the terms of the Apache License 2.0 license (the "License")
+#
+#* The License is included in the distribution as License.txt file.
+#
+#* You may not use this file except in compliance with the License.
+#
+#* Software distributed under the License is distributed on an "AS IS" BASIS,
+#
+#* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#
+#* See the License for the specific language governing permissions and limitations under the Option.
 
-# * * * * * * * * * Search Model  First attempt to implement the model I think can account for Alejo & Simona's data  1/16/19
-
-# Model stochastically samples locations, rejecting or accepting them as a function of an accumulator that either crosses threshold or not
-# AlejoModel2 (1/17/19): For unattended stimuli, stochastically sample dimensions, with greater weight on relevant (attended) ones
-# AlejoModel3 (1/17/19): Process attended & unattended genuinely in parallel: one iteration for selected for each w/ everything else
-# AlejoModel4 (1/28/19): Implement location, eye movements and graphics: First complete version
-
-# SearchModel1 (1/31/19): make the model itself an object, independent of teh inetrface
-
-# last modified 05/19/23: Updates for relations, improved search asymmetries RFH
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+# CASPER MODEL OF VISUAL SEARCH
+# (Concurrent Attention: Serial and Parallel Evaluation with Relations)
+# Developed by Rachel F Heaton and John E Hummel
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 import sys
+
 
 class VisualItem(object):
     """
@@ -85,34 +94,28 @@ import random, math, trig
 class SearchModel(object):
     def __init__(self):
 
-        self.LAST_MODIFIED               = '2/14/19'
-        # 2/12 change from 1/31: modulated effect of distance from fixation by radius of display
-        # 2/14 change frm 1/12: add capacity for linear distance cost
 
         # * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
         # * * * * * * * * Major, Theory-relevant Parameters * * * * * * * * *
         # * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
+        self.LAST_MODIFIED               = "10/03/2023"
         # Search item rejection and acceptance parameters
         #self.TARGET_MATCH_THRESHOLD      = 2 # 4 # 8 # 16 # 4 # 2 # the threshold an item's integrator must exceed to be matched as the target
         self.REJECTION_THRESHOLD         = 0.001#-2.0 # -4.0 # -1.0 # -0.5  # the negative threshold an item's integrator must reach to be rejected from search altogether
-        #self.EXACT_MATCH_THRESHOLD       = 0.01 # euclidean distance below which two vectors are considered an exact match
         self.TARGET_ABSENT_COST          = 20 # 3 10 # just a constant added to RT due to rejections
-        #self.TARGET_PRESENT_COST         = 10
         self.ITEM_INTEGRATOR_DECAY       = 0.5#0.5#0.01#0.5##001#0.005#05#0.02#0.01#0.02 # 1-decay is proportion preserved
 
-        #self.ATTENDED_ITEM_DECAY         = 0.2
 
         # for random sampling during inattention
-        self.P_RELEVANT_SAMPLING        = 0.99#0.425#4#85#85#85#0.85#0.4#0.9#0.75#0.9#0.2#0.9#0.2 # 0.9 0.7 # 0.5 # 0.1 # 0.95# 0.7 # 1.0 # 0.5 # p(sampling) a relevant dimension in unattended processing
+        self.P_RELEVANT_SAMPLING        = 0.85
         # 0.3 for irrelevant is too high for high target-distractor similarity 06/01/2023 RFH
         # 0.1 appears to be too low with no differentiation between high and medium target-distractor similarity  06/01/2023 RFH
-        self.P_IRRELEVANT_SAMPLING      = 0.15#0.15#0.15#0.25#0.15#0.8#0.15#02.2#75#0.3#0.8 # 0.3 0.01 # 0.05 # 0 # 0.05 #2 p(sampling) an irrelevant dimension in unattended processing
+        self.P_IRRELEVANT_SAMPLING      = 0.15
         self.MIN_SELECTION_PRIORITY     = 0.0001#0.0001#0.1 # the smallest selection priority for non-rejected items is allowed to go
-        self.POMERANTZ_UNITS            = 168#256#192#128
+        self.POMERANTZ_UNITS            = 128
 
-        # effect of distance betwn
-        # een fixation and item location in the display: how much does distance from fixation impair the rate of feature sampling:
+        # effect of distance between fixation and item location in the display: how much does distance from fixation impair the rate of feature sampling:
         self.DISTANCE_FALLOFF_RATE      = 1.0 # Larger means sharper falloff with distance; effect of distance modulated by DISPLAY_RADIUS
         self.LINEAR_DISTANCE_COST       = True # try a linear dropoff with distance
 
@@ -124,23 +127,15 @@ class SearchModel(object):
 
         # The effect of parallel processign needs to be greater 06 Aug 2023 RFH
         # This parameter acts as a multiplier on the match
-        self.MATCH_WEIGHT               = 3##2#1#3#2#1#3#12#48#24#3#12.0
+        self.MATCH_WEIGHT               = 3#
         self.IN_TEMPLATE_WEIGHT         = 3.0
         self.OUT_OF_TEMPLATE_WEIGHT     = 0.1#0.35
 
         # for feature weighting under selected processing
-        #self.RELEVANT_WEIGHT            = 1.0 # how much relevant dimensions contribute to similarity
-        #self.IRRELEVANT_WEIGHT          = 0 # 0.01 # how much irrelevant dimensions contribute to similarity
-        # non-cosine algorithm
-        #self.MISMATCH_BIAS              = 10  # how much does a mismatching feature hurt matching compared to a matching feature helping it
-        # cosine algorithm algorithm (2/2/19)
-        #self.COSINE_THRESHOLD           = 0.8 # cosines below this threshold are treated as negative
-        #self.COSINE_GAIN                = 1.0/(1.0 - self.COSINE_THRESHOLD) # so that cosine = 1 --> 1.0
 
         # operation cost parameters
         self.ATTENTION_SHIFT_COST       = 2#1#2#2#10#2#80#80#2#10#100#60#2 # how many iterations does it cost to switch attention to a new item
-        # self.DOUBLE_CHECK_MATCH         = False # do the conservative distance check on matching item and add cost
-        # self.EXACT_MATCH_COST           = 1 # how many iterations does it take to compute the final, exact match for target verification
+
 
         # search behavior parameters
         #self.INTEGRATOR_GUIDED_PRIORITY = 1.0#0.1 #  1.0 # [0...1]: degree to which an item's integrator influences it's selection priority: influence means better-matching items are more likely to be selected for evaluation
@@ -168,8 +163,7 @@ class SearchModel(object):
 
         # feature dimension indices (1/17/19). Check these against make_feature_vector for consistency
 
-        #self.COLOR_DIMENSIONS = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17) #  0...17 = 18
-        #self.SHAPE_DIMENSIONS = (18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38)    # 18...36 = 19
+
         self.COLOR_DIMENSIONS = []
         self.SHAPE_DIMENSIONS = []
         self.RELATION_DIMENSIONS = []
@@ -216,38 +210,8 @@ class SearchModel(object):
                          'pink'  :[ 1, 1, 0,-1,-1, 0, 1, 0, 0,-1, 0, 0, 0, 0, 0, 0, 0, 0],
                          'dkgrn' :[ 1, 1, 1,-1,-1, 0,-1,-1,-1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
                          'brown' :[ 1, 1, 1,-1,-1, 0, 1, 1,-1,-1,-1, 1, 0, 0, 0, 0, 0, 0]}
-        # shape is v1,v2,h1,h2,d1,d1,d2,d2,L1,L2,L3,L4,T1,T2,T3,T4,X
-        #                             [-------V/H-------][-----D-----][-----L----][-----T----][X]
-        # self.shape_vectors = {'vertical'  :[ 1, 1, 1,-1, 1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                  'horizontal':[-1,-1,-1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                  'T1'        :[ 1, 0, 0, 1, 0, 0,-1, 0,-1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-        #                  'T2'        :[ 1, 0, 0, 1, 0, 0,-1, 0,-1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-        #                  'T3'        :[ 1, 0, 0, 1, 0, 0,-1, 0,-1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-        #                  'T4'        :[ 1, 0, 0, 1, 0, 0,-1, 0,-1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-        #                  'L1'        :[ 1, 0, 0, 1, 0, 0,-1, 0,-1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                  'L2'        :[ 1, 0, 0, 1, 0, 0,-1, 0,-1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-        #                  'L3'        :[ 1, 0, 0, 1, 0, 0,-1, 0,-1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-        #                  'L4'        :[ 1, 0, 0, 1, 0, 0,-1, 0,-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-        #                  'D1'        :[-1, 0, 0,-1, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                  'D2'        :[ 0,-1, 0, 0, 0,-1,-1,-1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                  'X'         :[-1, 0, 0, 0, 0,-1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        #                  'O'         :[ 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-        #                  'Q'         :[ 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1],
-        #                  'P1'        :[ 0, 0, 0, 0, 0, 0, 1, 1,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                  'P2'        :[ 0, 0, 0, 0, 0, 0,-1,-1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                  'P3'        :[ 1, 1, 1, 1, 1, 1, 1, 1,-1,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                  'P4'        :[ 1, 1, 1, 1, 1, 1,-1,-1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                  'P5'        :[-1, 1, 1,-1, 1, 1, 1, 1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        #                  'P6'        :[ 1,-1, 1, 1,-1, 1, -1, -1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0] }
-        #                                  [----------------
-        #                            [ ------orientation in increments of pi/8-------------][L-vertices][T-junction][X]
-        #                            [ 0, 0, 0][1, 1][2, 2][3, 3][4, 4, 4][5, 5][6, 6][7, 7][L, L, L, L][T, T, T, T][X]
+
         self.shape_vectors = {
-                        # 07/28/23 RFH the labels for horizontal and vertical were transposed before dissertation simulations were run
-                        # This should have no effect on the results because of the nature of the stimuli that were simulated
-                        # However, this has been changed so that it doesn't cause issues in the future.
-                        #'vertical'  :[ 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        #'horizontal':[ 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         'horizontal':[ 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         'vertical'  :[ 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         'T1'        :[ 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
@@ -262,28 +226,13 @@ class SearchModel(object):
                         'O'         :[ 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         'Q'         :[ 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         'DORN1'     :[ 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         # 08/03/2023 RFH New compact versions of Pomerantz et al. (1977) stimuli
                         'DORN2'     :[ 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] + [0]*self.POMERANTZ_UNITS + [0]*self.POMERANTZ_UNITS,
                         'DORN6'     :[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] + [0]*self.POMERANTZ_UNITS + [0]*self.POMERANTZ_UNITS,
-                        # 08/03/2023 RFH New compact versions of Pomerantz et al. (1977) stimuli
                         'P1'        :[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0] + [0]*self.POMERANTZ_UNITS + [1]*self.POMERANTZ_UNITS,
                         'P2'        :[ 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0] + [0]*self.POMERANTZ_UNITS + [1]*self.POMERANTZ_UNITS,
                         'arrow'     :[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0] + [1]*self.POMERANTZ_UNITS + [0]*self.POMERANTZ_UNITS,
                         'triangle'  :[ 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0] + [0]*self.POMERANTZ_UNITS + [1]*self.POMERANTZ_UNITS,
-                        #'DORN2'     :[ 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] + [0]*1 + [0]*1,
-                        #'DORN6'     :[ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] + [0]*1 + [0]*1,
-                        #'P1'        :[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0] + [0]*1 + [1]*1,
-                        #'P2'        :[ 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0] + [0]*1 + [1]*1,
-                        #'arrow'     :[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0] + [1]*1 + [0]*1,
-                        #'triangle'  :[ 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0] + [0]*1 + [1]*1,
-                        # 'P2'      :[ 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                        # 'arrow'   :[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        # 'triangle':[ 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
-                        # 08/03/2023 RFH Old elaborated versions of Pomerantz et al. (1977) stimuli
-                        #'P1'        :[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                        #'P2'        :[ 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                        #'arrow'     :[ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        #'triangle'  :[ 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
-                        # 08/03/2023 RFH adding the relational task cheat representations
                         'cheatXabove':[ 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] + [1]*1+ [0]*1,
                         'cheatObelow':[ 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] + [1]*1+ [0]*1,
                         'cheatOabove':[ 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] + [0]*1+ [1]*1,
@@ -297,25 +246,116 @@ class SearchModel(object):
 
 
         self.relation_vectors = {'above': [1, 1, 0, 0],
-                            'below': [0, 0, 1, 1],
-                            'none' : [0, 0, 0, 0]}
+                                 'below': [0, 0, 1, 1],
+                                 'none' : [0, 0, 0, 0]}
 
+        # DEFAULTS
+        # FOR SIMULATION 1: TREISMAN & GELADE (1980),
+        # SIMULATION 2: WOLFE ET AL. (1989),
+        # SIMLATION 4: TREISMAN & SOUTHER (1985)
+        # SIMULATION 6: LOGAN (1994) WITH MULTICOLOR STIMULI
+        # SIMULATION 7: LOGAN (1994) WITH MONOCOLOR STIMULI
 
+        '''
         dim_index = 0
         for i in range(len(self.color_vectors['red'])):
             self.COLOR_DIMENSIONS.append(dim_index)
             dim_index += 1
 
-        for i in range(len(self.shape_vectors['cheatXabove'])):
-        #for i in range(len(self.shape_vectors['P1'])):
-        #for i in range(len(self.shape_vectors['X'])):
+        for i in range(len(self.shape_vectors['X'])):
             self.SHAPE_DIMENSIONS.append(dim_index)
             dim_index += 1
+
         for i in range(len(self.relation_vectors['above'])):
             self.RELATION_DIMENSIONS.append(dim_index)
             dim_index += 1
 
         self.non_relation_dimensions = self.COLOR_DIMENSIONS + self.SHAPE_DIMENSIONS
+        self.salience = [1] * 18 + [1] * 27
+
+        # SIMULATION 3: BUETTI ET AL. (2016)
+        elif self.SIM_ID == 3:
+
+            dim_index = 0
+            for i in range(len(self.color_vectors['red'])):
+                self.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.shape_vectors['X'])):
+                self.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.relation_vectors['above'])):
+                self.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.non_relation_dimensions = self.COLOR_DIMENSIONS + self.SHAPE_DIMENSIONS
+            self.salience = [1] * 18 + [1.5] * 27
+
+        # SIMULATION 5: POMERANTZ ET AL. (1977)
+        elif self.SIM_ID == 5:
+            dim_index = 0
+            for i in range(len(self.color_vectors['red'])):
+                self.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.shape_vectors['P1'])):
+                self.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.relation_vectors['above'])):
+                self.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.non_relation_dimensions = self.COLOR_DIMENSIONS + self.SHAPE_DIMENSIONS
+            self.salience = [1] * 18 + [1] * 27 + [1] * self.POMERANTZ_UNITS + [1] * self.POMERANTZ_UNITS
+
+        # SIMULATION 8A: MULTICOLOR RELATIONAL SEARCH (EXPERIMENT 1A, 1B) WITH EMERGENT FEATURE DEFAULT SALIENCE
+        # OR
+        # SIMULATION 9A: MONOCOLOR RELATIONAL SEARCH (EXPERIMENT 2A, 2B) WITH EMERGENT FEATURE DEFAULT SALIENCE
+        # OR
+        # SIMULATION 9B: MONOCOLOR RELATIONAL SEARCH (EXPERIMENT 2A, 2B) WITH EMERGENT FEATURE DEFAULT SALIENCE
+        elif self.SIM_ID in {8, 10, 11}:
+            dim_index = 0
+            for i in range(len(self.shape_vectors['cheatXabove'])):
+                self.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+            for i in range(len(self.relation_vectors['above'])):
+                self.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.non_relation_dimensions = self.COLOR_DIMENSIONS + self.SHAPE_DIMENSIONS
+            self.salience = [1] * 18 + [1] * 27 + [1] * 2
+
+        # SIMULATION 8B: MULTICOLOR RELATIONAL SEARCH (EXPERIMENT 1) WITH EMERGENT FEATURE REDUCED SALIENCE
+        elif self.SIM_ID == 9:
+            dim_index = 0
+            for i in range(len(self.shape_vectors['cheatXabove'])):
+                self.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+            for i in range(len(self.relation_vectors['above'])):
+                self.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.non_relation_dimensions = self.COLOR_DIMENSIONS + self.SHAPE_DIMENSIONS
+            self.salience = [1] * 18 + [1] * 27 + [0.33] * 2
+
+        # SIMULATION 10: SPACED OUT MULTICOLOR RELATIONAL SEARCH (EXPERIMENT 4) WITH EMERGENT FEATURE REDUCED SALIENCE
+        elif self.SIM_ID == 12:
+            dim_index = 0
+            for i in range(len(self.shape_vectors['cheatXabove'])):
+                self.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+            for i in range(len(self.relation_vectors['above'])):
+                self.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.non_relation_dimensions = self.COLOR_DIMENSIONS + self.SHAPE_DIMENSIONS
+            self.salience = [1] * 18 + [1] * 27 + [0.33] * 2
+            self.P_RELEVANT_SAMPLING = 0.95
+
+
+
         #self.salience = [1] * 18 + [1] * 27
         # Salience vector for Buetti et al simulation
         #self.salience = [1] * 18 + [1.5] * 27
@@ -324,11 +364,11 @@ class SearchModel(object):
 
         # Salience vector for Multicolor relations simulation
         #self.salience = [1] * 18 + [1] * 27 + [0.33] * 2
-        self.salience = [1] * 18 + [1] * 27 + [0.33] * 2
+        #self.salience = [1] * 18 + [1] * 27 + [0.33] * 2
 
         # Salience vector for Monocolor relations simulation
         #self.salience = [1] * 18 + [1] * 27 + [1] * 2
-
+'''
 
 
     def make_feature_vectors(self, item_properties):

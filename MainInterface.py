@@ -1,5 +1,24 @@
+#* Copyright 2023 The Board of Trustees of the University of Illinois. All Rights Reserved.
+#
+#* Licensed under the terms of the Apache License 2.0 license (the "License")
+#
+#* The License is included in the distribution as License.txt file.
+#
+#* You may not use this file except in compliance with the License.
+#
+#* Software distributed under the License is distributed on an "AS IS" BASIS,
+#
+#* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#
+#* See the License for the specific language governing permissions and limitations under the Option.
 
-# the Main Interface interface for the attention model, version 1      2/14/19
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+# CASPER MODEL OF VISUAL SEARCH
+# (Concurrent Attention: Serial and Parallel Evaluation with Relations)
+# Developed and written by Rachel F Heaton and John E Hummel
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
 
 import sys, SearchModel1, GraphicalRun1, copy, csv
 
@@ -125,7 +144,7 @@ class SearchModelInterface(object):
                 self.run_blind(verbose_title)
 
 
-    def run_suite(self, target, distractors, search_type, condition, num_distractors_list, num_runs):
+    def run_suite(self, target, distractors, search_type, condition, num_distractors_list, num_runs, sim_id=None):
         """
         runs a suite of num_runs  simulations, blind and not verbose
         varies target present & absent, and num distractors
@@ -777,6 +796,8 @@ class SearchModelInterface(object):
         self.graph_regression()
         return 1
 
+
+
     def run_premade_suite(self):
         """
         run a suite of simulations: red vertical among...
@@ -784,88 +805,188 @@ class SearchModelInterface(object):
         many numbers of distractors, and saves the results to data files
         :return:
         """
-        self.VERBOSE = False
+        self.model.VERBOSE = False
+
+        print("Which premade simulation would you like to run?")
+        print(" 1 - Simulation 1: Treisman & Gelade (1980)\n")
+        print(" 2 - Simulation 2: Wolfe et al. (1989)\n")
+        print(" 3 - Simulation 3: Buetti et al. (2016)\n")
+        print(" 4 - Simulation 4: Treisman & Souther (1985)\n")
+        print(" 5 - Simulation 5: Pomerantz et al. (1977)\n")
+        print(" 6 - Simulation 6: Similar to Logan (1994) using multicolor items\n")
+        print(" 7 - Simulation 7: Similar to Logan (1994) using single color items\n")
+        print(" 8 - Simulation 8: Multicolor relations with emergent feature, default salience\n")
+        print(" 9 - Simulation 8: Multicolor relations with emergent feature, reduced salience\n")
+        print("10 - Simulation 9: Monocolor relations with emergent feature, default salience\n")
+        print("11 - Simulation 9: Monocolor relations with emergent feature in relation-only condition only\n")
+        print("12 - Simulation 10: Multicolor relations with emergent feature with increased spacing\n")
+
+        SIM_ID = 99
+        while not (SIM_ID in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}):
+            SIM_ID = int(input('Simulation number >'))
+
 
         # increment the datafile index here: should be a unique index for each SUITE of simulations run
         self.data_file_index += 1
-
-        print
-        print( '* * * * * * * * * * * * * * * *')
-        print( 'Running. This may take a while.')
-        print( '* * * * * * * * * * * * * * * *')
-        print
-
         self.regression_summary_rts = []
 
 
+        if SIM_ID == 1:
+        # # # 1) Triesman & Gelade (1980)
 
-        # # # # 1) Triesman & Gelade (1980) Experiment
-        # num_subjects = 100
-        # for subject in range(num_subjects):
-        #     csv_file_name = str(self.data_file_index) + '.csv'
-        #     csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
-        #     writer = csv.writer(csv_data_file, delimiter=',')
-        #     writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
-        #     csv_data_file.close()
-        #     self.run_suite([[['blue', 'X', 'none']], 1], [[[['dkgrn', 'X','none']],1], [[['brown', 'T1','none']],1]], str(self.data_file_index), 1, [0, 4, 14, 29],52)
-        #     self.run_suite([[['dkgrn', 'T1', 'none']], 1], [[[['dkgrn', 'X', 'none']], 1], [[['brown', 'T1', 'none']], 1]], str(self.data_file_index), 2, [0, 4, 14, 29], 52)
-        #
-        #     self.data_file_index += 1
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
 
-        # # # # 2) Wolfe, Cave & Franzel (1989)
-        # num_subjects = 100
-        # for subject in range(num_subjects):
-        #     csv_file_name = str(self.data_file_index) + '.csv'
-        #     csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
-        #     writer = csv.writer(csv_data_file, delimiter=',')
-        #     writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
-        #     csv_data_file.close()
-        #     self.run_suite([[['green', 'horizontal', 'none']], 1], [[[['red', 'vertical', 'none']], 1]], str(self.data_file_index), 1, [0, 2, 4, 8, 16, 24, 36], 52)
-        #     self.run_suite([[['green', 'horizontal','none']],1], [[[['green', 'vertical','none']],1], [[['red', 'horizontal','none']],1]], str(self.data_file_index), 2, [0, 2, 4, 8, 16, 24, 36],52)
-        #     self.data_file_index += 1
+            for i in range(len(self.model.shape_vectors['X'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27
 
 
-        # # # # 3) Target-distractor similarity (Buetti et al., 2016)
-        # num_subjects = 100
-        # for subject in range(num_subjects):
-        #     csv_file_name = str(self.data_file_index) + '.csv'
-        #     csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
-        #     writer = csv.writer(csv_data_file, delimiter=',')
-        #     writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
-        #     csv_data_file.close()
-        #     self.run_suite([[['red', 'vertical', 'none']], 1], [[[['ltblue', 'horizontal', 'none']], 1]], str(self.data_file_index), 1, [0, 1, 4, 9, 19, 31], 52)
-        #     self.run_suite([[['red', 'vertical', 'none']], 1], [[[['yel2ow', 'vertical', 'none']], 1]], str(self.data_file_index), 2, [0, 1, 4, 9, 19, 31], 52)
-        #     self.run_suite([[['red', 'vertical', 'none']], 1], [[[['orange', 'vertical', 'none']], 1]], str(self.data_file_index), 3, [0, 1, 4, 9, 19, 31], 52)
-        #     self.data_file_index += 1
+            num_subjects = 100
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['blue', 'X', 'none']], 1], [[[['dkgrn', 'X','none']],1], [[['brown', 'T1','none']],1]], str(self.data_file_index), 1, [0, 4, 14, 29],52)
+                self.run_suite([[['dkgrn', 'T1', 'none']], 1], [[[['dkgrn', 'X', 'none']], 1], [[['brown', 'T1', 'none']], 1]], str(self.data_file_index), 2, [0, 4, 14, 29], 52)
+
+                self.data_file_index += 1
+
+        elif SIM_ID == 2:
+        # # # 2) Wolfe, Cave & Franzel (1989)
+
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.shape_vectors['X'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27
+
+            num_subjects = 100
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['green', 'horizontal', 'none']], 1], [[[['red', 'vertical', 'none']], 1]], str(self.data_file_index), 1, [0, 2, 4, 8, 16, 24, 36], 52)
+                self.run_suite([[['green', 'horizontal','none']],1], [[[['green', 'vertical','none']],1], [[['red', 'horizontal','none']],1]], str(self.data_file_index), 2, [0, 2, 4, 8, 16, 24, 36],52)
+                self.data_file_index += 1
+
+        elif SIM_ID == 3:
+        # # # 3) Target-distractor similarity (Buetti et al., 2016)
+
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.shape_vectors['X'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1.5] * 27
+
+            num_subjects = 100
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['red', 'vertical', 'none']], 1], [[[['ltblue', 'horizontal', 'none']], 1]], str(self.data_file_index), 1, [0, 1, 4, 9, 19, 31], 52)
+                self.run_suite([[['red', 'vertical', 'none']], 1], [[[['yel2ow', 'vertical', 'none']], 1]], str(self.data_file_index), 2, [0, 1, 4, 9, 19, 31], 52)
+                self.run_suite([[['red', 'vertical', 'none']], 1], [[[['orange', 'vertical', 'none']], 1]], str(self.data_file_index), 3, [0, 1, 4, 9, 19, 31], 52)
+                self.data_file_index += 1
 
 
-        # # # # 4) Search asymmetries (Treisman & Souther, 1985)
-        # num_subjects = 100
-        # for subject in range(num_subjects):
-        #     csv_file_name = str(self.data_file_index) + '.csv'
-        #     csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
-        #     writer = csv.writer(csv_data_file, delimiter=',')
-        #     writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
-        #     csv_data_file.close()
-        #     self.run_suite([[['white', 'Q', 'none']],1], [[[['white', 'O','none']],1]],  str(self.data_file_index), 1, [0,5,11], 100)
-        #     self.run_suite([[['white', 'O','none']],1], [[[['white', 'Q','none']],1]], str(self.data_file_index), 2, [0,5,11], 100)
-        #     self.data_file_index += 1
+        elif SIM_ID == 4:
+        # # # 4) Search asymmetries (Treisman & Souther, 1985)
 
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
 
-        # # # # 5) Search for oppositely oriented diagonals and Pomerantz stimuli Pomerantz, Saeger, and Stover (1977)
-        # num_subjects = 64
-        # participant = self.data_file_index
-        # for subject in range(num_subjects):
-        #     csv_file_name = str(self.data_file_index) + '.csv' #+  '_1.csv'
-        #     search_type = str(self.data_file_index) #+ '_1'
-        #     csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
-        #     writer = csv.writer(csv_data_file, delimiter=',')
-        #     writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
-        #     csv_data_file.close()
-        #     self.run_suite([[['red', 'DORN2','none']],1], [[[['red', 'DORN6','none']],1]], search_type, 1, [1, 3, 5], 100)
-        #     self.run_suite([[['red', 'P1','none']],1], [[[['red', 'P2','none']],1]], search_type, 2, [1, 3, 5], 100)
-        #     self.run_suite([[['red', 'arrow','none']],1], [[[['red', 'triangle','none']],1]], search_type, 3, [1, 3, 5], 100)
-        #     self.data_file_index += 1
+            for i in range(len(self.model.shape_vectors['X'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27
+
+            num_subjects = 100
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['white', 'Q', 'none']],1], [[[['white', 'O','none']],1]],  str(self.data_file_index), 1, [0,5,11], 100)
+                self.run_suite([[['white', 'O','none']],1], [[[['white', 'Q','none']],1]], str(self.data_file_index), 2, [0,5,11], 100)
+                self.data_file_index += 1
+
+        elif SIM_ID == 5:
+        # # # 5) Search for oppositely oriented diagonals and Pomerantz stimuli Pomerantz, Saeger, and Stover (1977)
+
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.shape_vectors['P1'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27 + [1] * self.model.POMERANTZ_UNITS + [1] * self.model.POMERANTZ_UNITS
+
+            num_subjects = 64
+            participant = self.data_file_index
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                search_type = str(self.data_file_index)
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['red', 'DORN2','none']],1], [[[['red', 'DORN6','none']],1]], search_type, 1, [1, 3, 5], 100)
+                self.run_suite([[['red', 'P1','none']],1], [[[['red', 'P2','none']],1]], search_type, 2, [1, 3, 5], 100)
+                self.run_suite([[['red', 'arrow','none']],1], [[[['red', 'triangle','none']],1]], search_type, 3, [1, 3, 5], 100)
+                self.data_file_index += 1
         # '''
         # self.data_file_index -= num_subjects
         # for subject in range(num_subjects):
@@ -881,48 +1002,247 @@ class SearchModelInterface(object):
 
 
         #
-        # # # # # 5) Relational Searches
-        # No cheat feature multicolor
-        # num_subjects = 32
-        # for subject in range(num_subjects):
-        #     csv_file_name = str(self.data_file_index) + '.csv'
-        #     csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
-        #     writer = csv.writer(csv_data_file, delimiter=',')
-        #     writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
-        #     csv_data_file.close()
-        #     self.run_suite([[['red', 'nocheatX', 'above'], ['green', 'nocheatO', 'below']], 1], [[[['green','nocheatO', 'above'],['red', 'nocheatX', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7, 15], 52)#[0, 1, 3, 7, 15], 52)
-        #     self.run_suite([[['red', 'nocheatX', 'above'], ['green', 'nocheatO', 'below']], 1], [[[['green', 'nocheatO', 'above'], ['orange', 'nocheatX', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7,15], 52)#[0, 1, 3, 7, 15], 52)
-        #     self.run_suite([[['red', 'nocheatX', 'above'], ['green', 'nocheatO', 'below']], 1], [[[['orange', 'nocheatX', 'above'], ['green', 'nocheatO', 'below']], 1]], str(self.data_file_index), 3, [0, 1, 3, 7,15], 52)#[0, 1, 3, 7, 15], 52)
-        #
-        #     self.data_file_index += 1
+        # # # # 5) Relational Searches
+        #No cheat feature multicolor
+        elif SIM_ID == 6:
 
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
 
+            for i in range(len(self.model.shape_vectors['cheatXabove'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27 + [1]*2
+
+            num_subjects = 32
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['red', 'nocheatX', 'above'], ['green', 'nocheatO', 'below']], 1], [[[['green','nocheatO', 'above'],['red', 'nocheatX', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7, 15], 52)#[0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'nocheatX', 'above'], ['green', 'nocheatO', 'below']], 1], [[[['green', 'nocheatO', 'above'], ['orange', 'nocheatX', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7,15], 52)#[0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'nocheatX', 'above'], ['green', 'nocheatO', 'below']], 1], [[[['orange', 'nocheatX', 'above'], ['green', 'nocheatO', 'below']], 1]], str(self.data_file_index), 3, [0, 1, 3, 7,15], 52)#[0, 1, 3, 7, 15], 52)
+
+                self.data_file_index += 1
+
+        elif SIM_ID == 7:
         # No cheat feature monocolor
-        # num_subjects = 32
-        # for subject in range(num_subjects):
-        #     csv_file_name = str(self.data_file_index) + '.csv'
-        #     csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
-        #     writer = csv.writer(csv_data_file, delimiter=',')
-        #     writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
-        #     csv_data_file.close()
-        #     self.run_suite([[['red', 'nocheatX', 'above'], ['red', 'nocheatO', 'below']], 1], [[[['red', 'nocheatO', 'above'], ['red', 'nocheatX', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7, 15], 52)
-        #     self.run_suite([[['red', 'nocheatX', 'above'], ['red', 'nocheatO', 'below']], 1], [[[['orange', 'nocheatO', 'above'], ['orange', 'nocheatX', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7, 15], 52)
-        #     self.run_suite([[['red', 'nocheatX', 'above'], ['red', 'nocheatO', 'below']], 1], [[[['orange', 'nocheatX', 'above'], ['orange', 'nocheatO', 'below']], 1]], str(self.data_file_index), 3,  [0, 1, 3, 7, 15], 52)
-        #     self.data_file_index += 1
+
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.shape_vectors['cheatXabove'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27 + [1]*2
+
+            num_subjects = 32
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['red', 'nocheatX', 'above'], ['red', 'nocheatO', 'below']], 1], [[[['red', 'nocheatO', 'above'], ['red', 'nocheatX', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'nocheatX', 'above'], ['red', 'nocheatO', 'below']], 1], [[[['orange', 'nocheatO', 'above'], ['orange', 'nocheatX', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'nocheatX', 'above'], ['red', 'nocheatO', 'below']], 1], [[[['orange', 'nocheatX', 'above'], ['orange', 'nocheatO', 'below']], 1]], str(self.data_file_index), 3,  [0, 1, 3, 7, 15], 52)
+                self.data_file_index += 1
 
 
-        # # Cheat feature multicolor
-        # num_subjects = 32
-        # for subject in range(num_subjects):
-        #     csv_file_name = str(self.data_file_index) + '.csv'
-        #     csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
-        #     writer = csv.writer(csv_data_file, delimiter=',')
-        #     writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
-        #     csv_data_file.close()
-        #     self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['red', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7, 15], 52)
-        #     self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['orange', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7, 15], 52)
-        #     self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['orange', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1]], str(self.data_file_index), 3, [0, 1, 3, 7, 15], 52)
-        #     self.data_file_index += 1
+        # Cheat feature multicolor (salience and other parameters are set elsewhere according to the )
+        elif SIM_ID == 8:
+
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.shape_vectors['cheatXabove'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27 + [1]*2
+
+            num_subjects = 32
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['red', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['orange', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['orange', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1]], str(self.data_file_index), 3, [0, 1, 3, 7, 15], 52)
+                self.data_file_index += 1
+
+        # Cheat feeture multicolor reduced salience
+
+        elif SIM_ID == 9:
+            dim_index = 0
+
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.shape_vectors['cheatXabove'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27 + [0.33] * 2
+            num_subjects = 32
+
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['red', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['orange', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['orange', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1]], str(self.data_file_index), 3, [0, 1, 3, 7, 15], 52)
+                self.data_file_index += 1
+
+
+        # Cheat featire monocolor
+
+
+        elif SIM_ID == 10:
+
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.shape_vectors['cheatXabove'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27 + [1] * 2
+
+            num_subjects = 32
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['red', 'cheatObelow', 'below']], 1], [[[['red', 'cheatOabove', 'above'], ['red', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['red', 'cheatObelow', 'below']], 1], [[[['orange', 'cheatOabove', 'above'], ['orange', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['red', 'cheatObelow', 'below']], 1], [[[['orange', 'cheatXabove', 'above'], ['orange', 'cheatObelow', 'below']], 1]], str(self.data_file_index), 3,  [0, 1, 3, 7, 15], 52)
+
+                self.data_file_index += 1
+
+        # No emergent cheat feature in Relation + feature and Feature-only conditions
+        elif SIM_ID == 11:
+
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.shape_vectors['cheatXabove'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27 + [1] * 2
+
+            num_subjects = 32
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['red', 'cheatObelow', 'below']], 1], [[[['red', 'cheatOabove', 'above'], ['red', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'nocheatX', 'above'], ['red', 'nocheatO', 'below']], 1], [[[['orange', 'nocheatO', 'above'], ['orange', 'nocheatX', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'nocheatX', 'above'], ['red', 'nocheatO', 'below']], 1], [[[['orange', 'nocheatX', 'above'], ['orange', 'nocheatO', 'below']], 1]], str(self.data_file_index), 3, [0, 1, 3, 7, 15], 52)
+                self.data_file_index += 1
+
+
+        elif SIM_ID ==12:
+
+            dim_index = 0
+            for i in range(len(self.model.color_vectors['red'])):
+                self.model.COLOR_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.shape_vectors['cheatXabove'])):
+                self.model.SHAPE_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            for i in range(len(self.model.relation_vectors['above'])):
+                self.model.RELATION_DIMENSIONS.append(dim_index)
+                dim_index += 1
+
+            self.model.non_relation_dimensions = self.model.COLOR_DIMENSIONS + self.model.SHAPE_DIMENSIONS
+            self.model.salience = [1] * 18 + [1] * 27 + [0.33] * 2
+
+            num_subjects = 32
+            for subject in range(num_subjects):
+                csv_file_name = str(self.data_file_index) + '.csv'
+                csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+                writer = csv.writer(csv_data_file, delimiter=',')
+                writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+                csv_data_file.close()
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['red', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['orange', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7, 15], 52)
+                self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['orange', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1]], str(self.data_file_index), 3, [0, 1, 3, 7, 15], 52)
+                self.data_file_index += 1
+
+
+
+
+        # # Cheat feature multicolor SPACED OUT like Experiment 4b
+        # # THE INTERFACE WILL SET RELEVANT SAMPLING TO 0.95 TO RUN THIS SIMULATION
+        # elif SIM_ID == 11:
+        #     num_subjects = 32
+        #     for subject in range(num_subjects):
+        #         csv_file_name = str(self.data_file_index) + '.csv'
+        #         csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
+        #         writer = csv.writer(csv_data_file, delimiter=',')
+        #         writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
+        #         csv_data_file.close()
+        #         self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['red', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7], 52)
+        #         self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['orange', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7], 52)
+        #         self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['orange', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1]], str(self.data_file_index), 3, [0, 1, 3, 7], 52)
+        #         self.data_file_index += 1
 
 
         # TODO THESE SHOULD BE DELETED THEY ARE REDUNDANT
@@ -962,19 +1282,6 @@ class SearchModelInterface(object):
         #     self.data_file_index += 1
 
 
-        # # Cheat feature multicolor SPACED OUT like Experiment 4b
-        # # YOU MUST CHANGE RELEVANT SAMPLING TO 0.9 TO RUN THIS SIMULATION
-        num_subjects = 32
-        for subject in range(num_subjects):
-            csv_file_name = str(self.data_file_index) + '.csv'
-            csv_data_file = open('data/' + csv_file_name, 'a', encoding='UTF8')
-            writer = csv.writer(csv_data_file, delimiter=',')
-            writer.writerow(['resp.corr', 'total_setsize', 'trial_type', 'resp.rt', 'dcolor', 'participant'])
-            csv_data_file.close()
-            self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['red', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 1, [0, 1, 3, 7], 52)
-            self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['green', 'cheatOabove', 'above'], ['orange', 'cheatXbelow', 'below']], 1]], str(self.data_file_index), 2, [0, 1, 3, 7], 52)
-            self.run_suite([[['red', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1], [[[['orange', 'cheatXabove', 'above'], ['green', 'cheatObelow', 'below']], 1]], str(self.data_file_index), 3, [0, 1, 3, 7], 52)
-            self.data_file_index += 1
 
         #TODO THIS IS REDUNDANT AND SHOULD BE REMOVED
         # num_subjects = 32
@@ -1067,6 +1374,8 @@ class SearchModelInterface(object):
 
         # and finally, write the updated index to the file so it can be incremented next run
         self.write_file_index()
+
+        exit()
 
     def graph_regression(self):
 
@@ -1217,12 +1526,12 @@ class SearchModelInterface(object):
         text_lines.append('* *     Main Menu    * *\n')
         text_lines.append('(v) Verbose is ' + str(self.VERBOSE) + '. Toggle to ' + str(not (self.VERBOSE)) + '.')
         # text_lines.append('(g) Switch to graphics (there is no coming back)\n')
-        text_lines.append('\n(1) Run a ready-made simulation')
-        text_lines.append('(2) Run a ready-made suite of simulations')
-        text_lines.append('\n(3) Make and run a new simulation')
-        text_lines.append('(4) Make and run a new suite of simulations\n')
-        text_lines.append('(5) Modify parameters\n')
-        text_lines.append('(6) Save distance cost\n')
+        #text_lines.append('\n(1) Run a ready-made simulation')
+        text_lines.append('(1) Run a ready-made suite of simulations')
+        #text_lines.append('\n(3) Make and run a new simulation')
+        #text_lines.append('(4) Make and run a new suite of simulations\n')
+        #text_lines.append('(5) Modify parameters\n')
+        #text_lines.append('(6) Save distance cost\n')
         text_lines.append('(q) Quit\n')
         return text_lines
 
@@ -1231,7 +1540,7 @@ class SearchModelInterface(object):
         this is the main menu of the interface when it's run in non-graphical mode
         :return:
         """
-        legal_responses = ('q','v','1','2','3','4','5','6')
+        legal_responses = ('q','v','1')#,'2','3','4','5','6')
         all_done = False
         while not(all_done):
             text_lines = self.get_menu_items()
@@ -1246,7 +1555,7 @@ class SearchModelInterface(object):
             elif response == 'v': self.VERBOSE = not(self.VERBOSE)
             elif response == 'g':
                 return True # True here means Go to the graphical menu
-            elif response == '1':
+            elif response == '2':
                 result = self.run_premade_simulation()
                 if result:
                     print( 'I hope that was to your liking. If not, then try changing parameters.')
@@ -1254,7 +1563,7 @@ class SearchModelInterface(object):
                 else:
                     print( 'I see that went poorly. Perhaps you should rethink you life.')
                     print
-            elif response == '2':
+            elif response == '1':
                 self.run_premade_suite()
             elif response == '3':
                 self.run_handmade_simulation()
@@ -1265,6 +1574,7 @@ class SearchModelInterface(object):
                 self.run_suite_from_file()
             elif response == '6':
                 self.save_distance_cost() # write distance cost functin to file
+
             else:
                 # chide user for carelessness
                 print
