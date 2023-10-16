@@ -1,2 +1,4 @@
-This model of visual salience was written and developed by Rachel F Heaton and John E Hummel.
-If this work is used in scientific research please cite Heaton & Hummel (2023)
+This model of visual search was first developed and written by John E Hummel in 2018.
+The model was subsequently developed and written by Rachel F Heaton.
+
+If this work is used in scientific research please cite the persistent DOI tagged to this repository.
