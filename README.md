@@ -19,9 +19,7 @@ This model extends and replaces an earlier version of the model found at https:/
 
 
 # If this work is used in academic research, please cite:
-
-
-as well as the persistent DOI in the README.md file in this repository.
+the persistent DOI in the README.md file in this repository.
 
 
 
