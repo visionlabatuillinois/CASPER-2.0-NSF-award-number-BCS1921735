@@ -19,7 +19,10 @@ This model extends and replaces an earlier version of the model found at https:/
 
 
 # If this work is used in academic research, please cite:
-the persistent DOI in the README.md file in this repository
+Heaton, R.F. (2023) A computational model of serial and parallel processing in visual search.
+https://arxiv.org/abs/2310.10061
+
+and the persistent DOI in the README.md file in this repository
 
 <a href="https://zenodo.org/doi/10.5281/zenodo.10005691"><img src="https://zenodo.org/badge/686478617.svg" alt="DOI"></a>
 
