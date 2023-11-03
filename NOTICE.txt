@@ -1,4 +1,1 @@
-This model of visual search was first developed and written by John E Hummel in 2018.
-The model was subsequently developed and written by Rachel F Heaton.
-
-If this work is used in scientific research please cite the persistent DOI tagged to this repository.
+Model of visual search conceptualized by Simona Buetti, John E Hummel, Alejandro Lleras, and Rachel F Heaton. Software written by John E Hummel and Rachel F Heaton.
