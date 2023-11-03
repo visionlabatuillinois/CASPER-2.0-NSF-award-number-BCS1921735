@@ -1,8 +1,3 @@
-# trig.py
-# a set of routines for performing various trig operations on vectors
-# these routines are defined for list types, not vector types
-#   reason: list types are Much more flexible!
-# John Hummel, 1/16/08
 
 import math
 
