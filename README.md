@@ -5,7 +5,7 @@ This work was supported by a 2019 grant from the National Science Foundation to 
 # CASPER 2.0
 # CASPER Model of visual search 
 # Concurrent Attention: Serial and Parallel Evaluation with Relations
-Conceptualization: Simona Buetti, John E Hummel, Alejandro Lleras, and Rachel F Heaton .
+Conceptualization: Simona Buetti, John E Hummel, Alejandro Lleras, and Rachel F Heaton.
 Software: John E Hummel and Rachel F Heaton.
 
 # To run this code:
