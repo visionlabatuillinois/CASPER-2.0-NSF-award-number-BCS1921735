@@ -1,6 +1,6 @@
 # Acknowledgements
 
-This work was supported by a 2019 grant from the National Science Foundation to Simona Buetti (PI) under award number BCS1921735 (Hummel and Lleras, Co-PIs), CompCog: Template Contrast and Saliency (TCAS) Toolbox: a tool to visualize parallel attentive evaluation of scenes.
+This work was supported by a 2019 grant from the National Science Foundation to Simona Buetti (PI) under award number [BCS1921735](https://www.nsf.gov/awardsearch/showAward?AWD_ID=1921735&HistoricalAwards=false ) (Hummel and Lleras, Co-PIs), CompCog: Template Contrast and Saliency (TCAS) Toolbox: a tool to visualize parallel attentive evaluation of scenes.
 
 # CASPER 2.0
 # CASPER Model of visual search 
