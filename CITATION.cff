@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Heaton"
+  given-names: "Rachel"
+- family-names: "Hummel"
+  given-names: "John"
+- family-names: "Lleras"
+  given-names: "Alejandro"
+- family-names: "Buetti"
+  given-names: "Simona"
+title: "CASPER-2.0"
+version: 2.0
+url: "https://github.com/visionlabatuillinois/CASPER-2.0-NSF-award-number-BCS1921735"
