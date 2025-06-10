@@ -7,4 +7,4 @@
 * Software distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and limitations under the License.
-* Acknowledgements: This work was supported by grant from the National Science Foundation (BCS1921735) to PI Buetti and co-PIs Lleras and Hummel
+* Acknowledgements: This work was supported by a grant from the National Science Foundation (BCS1921735) to PI Buetti and co-PIs Lleras and Hummel
